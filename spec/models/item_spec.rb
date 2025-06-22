@@ -361,6 +361,17 @@ RSpec.describe Item, type: :model do
       end
     end
 
+    describe "#is_in_child_item_request?" do
+      it "is true for items that are in a child item request and false otherwise" do
+        item_not_in_child_item_request = create(:item, organization:)
+        child_item_request = create(:child_item_request)
+        item_in_child_item_request = child_item_request.item_request.item
+
+        expect(item_not_in_child_item_request.is_in_child_item_request?).to be false
+        expect(item_in_child_item_request.is_in_child_item_request?).to be true
+      end
+    end
+
     describe "other?" do
       it "is true for items that are partner_key 'other'" do
         item = create(:item, base_item: create(:base_item, name: "Base"))

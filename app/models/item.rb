@@ -109,6 +109,12 @@ class Item < ApplicationRecord
     end
   end
 
+  def is_in_child_item_request?
+    Partners::ChildItemRequest.includes(item_request: :item)
+      .where(item_request: {item: self})
+      .any?
+  end
+
   def can_delete?(inventory = nil, kits = nil)
     can_deactivate_or_delete?(inventory, kits) && line_items.none? && !barcode_count&.positive? && !in_request? && kit.blank?
   end
