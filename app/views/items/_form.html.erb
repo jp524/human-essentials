@@ -55,10 +55,11 @@
 
               <%= f.label :additional_info, "Additional Information (Bank Use Only) " %> <i>(500 character max)</i>
               <%= f.input :additional_info, label: false, maxlength: 500, wrapper: :input_group %>
+              <%= f.hidden_field :is_in_child_item_request, value: @item.is_in_child_item_request? %>
             </div>
             <!-- /.card-body -->
             <div class="card-footer">
-              <%= submit_button %>
+              <%= submit_button({id: "submit_item_form_btn"}) %>
             </div>
           </div>
           <!-- /.card -->
@@ -74,3 +75,15 @@
     </div><!-- /.container-fluid -->
   </section>
 <% end %>
+
+<script type="module">
+  $(() => {
+    if($("#item_is_in_child_item_request").val() == "true" && $("#visible_to_partners").val() == "true") {
+      $("#visible_to_partners").change(function() {
+        if ($(this).is(":checked") == false) {
+          $("#submit_item_form_btn").attr("data-confirm", "Item is currently used by partners in child requests. Proceed?");
+        }
+      })
+    }
+  })
+</script>

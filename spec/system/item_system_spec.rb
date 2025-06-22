@@ -58,18 +58,60 @@ RSpec.describe "Item management", type: :system do
     expect(page.find(".alert")).to have_content "didn't work"
   end
 
-  it "can make the item invisible to partners" do
-    item = create(:item)
-    visit edit_item_path(item.id)
-    uncheck "visible_to_partners"
-    click_button "Save"
-    visit edit_item_path(item.id)
+  context "when item isn't used in child item request" do
+    it "can make the item invisible to partners" do
+      item = create(:item)
+      visit edit_item_path(item.id)
+      uncheck "visible_to_partners"
+      click_button "Save"
+      visit edit_item_path(item.id)
 
-    # rubocop:disable Rails/DynamicFindBy
-    expect(find_by_id("visible_to_partners").checked?).to be false
-    # rubocop:enable Rails/DynamicFindBy
+      expect(find_by_id("visible_to_partners").checked?).to be false
+      expect(item.reload.visible_to_partners).to be false
+    end
+  end
 
-    expect(item.reload.visible_to_partners).to be false
+  context "when item is used in child item request" do
+    let!(:child_item_request) { create(:child_item_request) }
+    let(:item) { child_item_request.item_request.item }
+
+    context "when 'visible_to_partners' is changed" do
+      context "when confirmation modal is accepted" do
+        it "makes the item invisible to partners" do
+          visit edit_item_path(item)
+          uncheck "visible_to_partners"
+          accept_prompt("Item is currently used by partners in child requests. Proceed?") do
+            click_button "Save"
+          end
+          expect(page).to have_content("#{item.name} updated!")
+          expect(item.reload.visible_to_partners).to be false
+        end
+      end
+
+      context "when confirmation modal is dismissed" do
+        it "doesn't change the item's visibility" do
+          visit edit_item_path(item)
+          uncheck "visible_to_partners"
+          dismiss_prompt("Item is currently used by partners in child requests. Proceed?") do
+            click_button "Save"
+          end
+          expect(find_by_id("visible_to_partners").checked?).to be false # Item still unchecked
+
+          visit edit_item_path(item)
+          expect(find_by_id("visible_to_partners").checked?).to be true
+        end
+      end
+    end
+
+    context "when 'visible_to_partners' isn't changed" do
+      before { item.update(visible_to_partners: false) }
+
+      it "saves without showing a confirmation modal" do
+        visit edit_item_path(item)
+        click_button "Save"
+        expect(page).to have_content("#{item.name} updated!")
+      end
+    end
   end
 
   it "can filter the #index by base item as a user" do
